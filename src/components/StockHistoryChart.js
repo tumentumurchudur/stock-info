@@ -7,14 +7,16 @@ const styles = {
     }
 };
 
-const StockHistoryChart = ({ data, style }) => (
+const StockHistoryChart = ({ data, dateRange, style }) => (
     <div style={Object.assign(styles.component, style)}>
         <BarChart data={data} height={150} width={380} />
+        <div style={{ width:380 }}>{dateRange[0]} - {dateRange[1]}</div>
     </div>
 );
 
 StockHistoryChart.propTypes = {
     data: React.PropTypes.array,
+    dateRange: React.PropTypes.array,
     style: React.PropTypes.object
 };
 

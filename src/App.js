@@ -27,6 +27,7 @@ class App extends Component {
     this.state = {
       data: null,
       chartData: [],
+      chartDateRange: [],
       stockSymbol: ''
     };
 
@@ -57,8 +58,10 @@ class App extends Component {
       axios.get(api)
       .then(res => {
         console.log('chart data=>', res.data.query.results.quote);
-        const raw = res.data.query.results.quote;
-        const chartData = raw.map((point) => {
+        let data = res.data.query.results.quote;
+        data.sort(this._compare);
+
+        const chartData = data.map((point) => {
           return {
             color: Styles.Colors.FOG,
             label: '',
@@ -66,9 +69,20 @@ class App extends Component {
           };
         });
 
-        this.setState({chartData});
+        this.setState({
+          chartData,
+          chartDateRange: [startDate, endDate]
+        });
       });
     }
+  }
+
+  _compare(a,b) {
+    if (a.Date < b.Date)
+      return -1;
+    if (a.Date > b.Date)
+      return 1;
+    return 0;
   }
 
   _handleGetDate() {
@@ -83,6 +97,7 @@ class App extends Component {
       axios.get(api)
       .then(res => {
         console.log('got=>', res);
+
         this.setState({data: res.data.query.results.quote});
       });
     }
@@ -102,6 +117,8 @@ class App extends Component {
   }
 
   render() {
+    const { chartData } = this.state;
+
     return (
       <div className="App">
         <div className="App-header">
@@ -126,6 +143,7 @@ class App extends Component {
             <StockBasicInfo data={this.state.data} />
             <StockHistoryChart
               data={this.state.chartData}
+              dateRange={this.state.chartDateRange}
               style={{ alignSelf: 'center' }}
             />
           </div>
