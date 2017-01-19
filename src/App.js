@@ -26,9 +26,10 @@ class App extends Component {
 
     this.state = {
       data: null,
-      chartData: [],
+      chartData: null,
       chartDateRange: [],
-      stockSymbol: ''
+      stockSymbol: '',
+      apiErrorMsg: ''
     };
 
     this._handleGetDate = this._handleGetDate.bind(this);
@@ -39,39 +40,52 @@ class App extends Component {
 
   _handleChartData() {
     const { stockSymbol } = this.state;
-    const startDate = moment().add(-120, 'd').format('YYYY-MM-DD');
+    const startDate = moment().add(-180, 'd').format('YYYY-MM-DD');
     const endDate = moment().format('YYYY-MM-DD');
 
     if (stockSymbol) {
       const api = `
-      http://query.yahooapis.com/v1/public/yql?q=
-      select * from   yahoo.finance.historicaldata
-              where  symbol    = "${stockSymbol}"
-              and    startDate = "${startDate}"
-              and    endDate   = "${endDate}"
-      &format=json
-      &diagnostics=true
-      &env=store://datatables.org/alltableswithkeys
-      &callback=
+        http://query.yahooapis.com/v1/public/yql?q=
+        select * from   yahoo.finance.historicaldata
+                where  symbol    = "${stockSymbol}"
+                and    startDate = "${startDate}"
+                and    endDate   = "${endDate}"
+        &format=json
+        &diagnostics=true
+        &env=store://datatables.org/alltableswithkeys
     `;
 
       axios.get(api)
       .then(res => {
-        console.log('chart data=>', res.data.query.results.quote);
         let data = res.data.query.results.quote;
-        data.sort(this._compare);
 
-        const chartData = data.map((point) => {
-          return {
-            color: Styles.Colors.FOG,
-            label: '',
-            value: point.Adj_Close
-          };
-        });
+        if (data && data.length) {
+          data.sort(this._compare); // TODO: use lodash instead
 
+          const chartData = data.map(point => {
+            return {
+              color: Styles.Colors.FOG,
+              label: '',
+              value: point.Adj_Close
+            };
+          });
+
+          this.setState({
+            chartData,
+            chartDateRange: [
+              moment(startDate).format('MMM YYYY'),
+              moment(endDate).format('MMM YYYY')
+            ],
+            apiErrorMsg: ''
+          });
+        }
+      })
+      .catch(() => {
         this.setState({
-          chartData,
-          chartDateRange: [startDate, endDate]
+          data: null,
+          chartData: null,
+          chartDateRange: [],
+          apiErrorMsg: stockSymbol +  ' not found!'
         });
       });
     }
@@ -96,9 +110,14 @@ class App extends Component {
     if (stockSymbol) {
       axios.get(api)
       .then(res => {
-        console.log('got=>', res);
+        if (res) {
+          const data = res.data.query.results.quote;
 
-        this.setState({data: res.data.query.results.quote});
+          this.setState({data});
+        }
+      })
+      .catch(err => {
+        console.log('error has occured =>', err);
       });
     }
   }
@@ -123,7 +142,7 @@ class App extends Component {
       <div className="App">
         <div className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
-          <h2>Stock info</h2>
+          <h2>Stock Quote</h2>
         </div>
         <MuiThemeProvider>
           <TextField
@@ -138,7 +157,11 @@ class App extends Component {
           <RaisedButton label="Get Data" onClick={this._handleGetDate} />
         </MuiThemeProvider>
 
-        {this.state && this.state.data ? (
+        <div style={{ margin: 10, color: Styles.Colors.STRAWBERRY }}>
+          {this.state.apiErrorMsg}
+        </div>
+
+        {this.state && this.state.data && this.state.chartData ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 20, margin: 10, border: '1px solid black' }}>
             <StockBasicInfo data={this.state.data} />
             <StockHistoryChart

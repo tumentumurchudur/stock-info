@@ -13,7 +13,6 @@ const fields = [
 
 const styles = {
     component: {
-        border: '1px solid ' + Styles.Colors.ASH,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-start',
