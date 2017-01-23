@@ -10,6 +10,8 @@ import injectTapEventPlugin from 'react-tap-event-plugin';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider'
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
+import SelectField from 'material-ui/SelectField';
+import MenuItem from 'material-ui/MenuItem';
 
 // fetch
 import axios from 'axios';
@@ -28,6 +30,7 @@ class App extends Component {
       data: null,
       chartData: null,
       chartDateRange: [],
+      chartSelectedRange: -7,
       stockSymbol: '',
       apiErrorMsg: ''
     };
@@ -38,9 +41,9 @@ class App extends Component {
     this._handleChartData = this._handleChartData.bind(this);
   }
 
-  _handleChartData() {
-    const { stockSymbol } = this.state;
-    const startDate = moment().add(-180, 'd').format('YYYY-MM-DD');
+  _handleChartData(value = -7) {
+    const { stockSymbol, chartOptions } = this.state;
+    const startDate = moment().add(value, 'd').format('YYYY-MM-DD')
     const endDate = moment().format('YYYY-MM-DD');
 
     if (stockSymbol) {
@@ -76,7 +79,8 @@ class App extends Component {
               moment(startDate).format('MMM YYYY'),
               moment(endDate).format('MMM YYYY')
             ],
-            apiErrorMsg: ''
+            apiErrorMsg: '',
+            chartSelectedRange: value
           });
         }
       })
@@ -136,7 +140,7 @@ class App extends Component {
   }
 
   render() {
-    const { chartData } = this.state;
+    const { chartData, chartDateRange, chartSelectedRange, data } = this.state;
 
     return (
       <div className="App">
@@ -161,14 +165,29 @@ class App extends Component {
           {this.state.apiErrorMsg}
         </div>
 
-        {this.state && this.state.data && this.state.chartData ? (
+        {this.state && data && chartData ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 20, margin: 10, border: '1px solid black' }}>
-            <StockBasicInfo data={this.state.data} />
+            <StockBasicInfo data={data} />
             <StockHistoryChart
-              data={this.state.chartData}
-              dateRange={this.state.chartDateRange}
+              data={chartData}
+              dateRange={chartDateRange}
               style={{ alignSelf: 'center' }}
             />
+            <MuiThemeProvider>
+              <SelectField
+                floatingLabelText="Select Period:"
+                value={chartSelectedRange}
+                onChange={(event, index, value) => {
+                  this._handleChartData(value);
+                }}
+              >
+                <MenuItem value={-7} primaryText="Last Week" />
+                <MenuItem value={-30} primaryText="Last Month" />
+                <MenuItem value={-90} primaryText="Last 3 months" />
+                <MenuItem value={-180} primaryText="Last 6 months" />
+                <MenuItem value={-365} primaryText="Last Year" />
+              </SelectField>
+            </MuiThemeProvider>
           </div>
         ) : null}
       </div>
